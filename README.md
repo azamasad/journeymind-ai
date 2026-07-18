@@ -56,6 +56,32 @@ journeymind-ai/
 | Communication | REST APIs (CORS enabled)            |
 | Styling     | Responsive, dark/light mode, animations |
 
+### Architecture Diagram
+
+```mermaid
+flowchart TD
+    A[React + TypeScript + Vite] --> B[REST APIs]
+    B --> C[FastAPI Backend]
+    C --> D[AI Decision Engine]
+    D --> E[Journey Context]
+    D --> F[Recommendation Engine]
+    D --> G[Explainability]
+    D --> H[Business Impact]
+    C --> I[Dashboard]
+```
+
+### Request Flow
+
+1. The user opens the dashboard at `http://localhost:3000`.
+2. The frontend calls `GET /dashboard`.
+3. The backend builds the journey context from the current flight, weather, alternatives, and services.
+4. The AI decision engine evaluates alternatives and selects the top recommendation.
+5. The backend returns the recommendation, explainability data, business impact, timeline, and alerts.
+6. The user views recommendations and optionally accepts one.
+7. The frontend calls `POST /rebook` with the chosen alternative.
+8. The backend updates the current itinerary, timeline, and business impact.
+9. The dashboard refreshes and shows the new journey.
+
 ---
 
 ## Features
@@ -69,10 +95,10 @@ journeymind-ai/
 - **Journey Timeline** — check-in, security, gate, boarding, departure, arrival, hotel
 - **Airport Map Placeholder** — SVG map with current position, gate, lounge, restaurant, and walking path
 - **AI Decision Timeline** — chronological, timestamped view of autonomous agent actions: disruption detection, alternative evaluation, risk comparison, recommendation generation, traveler notification
-- **Journey Summary** — proactive summary shown before user interaction: "We detected a disruption and have already evaluated your options"
+- **Journey Summary** — proactive summary shown before user interaction: "A major disruption has occurred. JourneyMind AI has already analyzed the situation and prepared the best options."
 - **Business Impact Panel** — AI-estimated executive metrics: support calls avoided, delay reduction, customer satisfaction, passenger stress, operational confidence, carbon impact
 - **AI Explainability Modal** — "Why this recommendation?" with decision inputs, decision process, confidence score, and ranked factors
-- **Demo Mode Badge** — "Demo Mode · Mock Enterprise Data" avoids implying live airline integrations
+- **Demo Mode Badge** — "Demo Mode · Simulated disruption" avoids implying live airline integrations
 - **Architecture Modal** — "How JourneyMind Works" visual flow from travel event to AI orchestrator, reasoning engine, recommendation engine, and passenger experience
 - **Weather & Travel Alerts** — origin/destination weather and unread notifications
 - **Dark / Light Mode** — toggle with Tailwind `dark` class
@@ -189,7 +215,7 @@ If no key is provided, JourneyMind AI falls back to intelligent, context-aware m
 
 ## 5-Minute Demo Script
 
-1. Open `http://localhost:3000` and point out the **Demo Mode** badge, then the **Journey Summary**: "We detected a disruption and have already evaluated your options."
+1. Open `http://localhost:3000` and point out the **Demo Mode** badge, then the **Journey Summary**: "A major disruption has occurred. JourneyMind AI has already analyzed the situation and prepared the best options."
 2. Show the **AI Decision Timeline** — timestamped autonomous agent actions (detect, evaluate, compare, notify).
 3. Point out the **Business Impact** panel and explain that these are AI-estimated enterprise outcomes.
 4. Open the **Rebooking Engine** and explain the top option (LH762A via Frankfurt) with price, confidence, decision factors, and CO₂.
@@ -198,6 +224,21 @@ If no key is provided, JourneyMind AI falls back to intelligent, context-aware m
 7. Open **Airport Services** and filter to lounges/coffee.
 8. Use the **AI Copilot** chat: ask "What are my options?" and show the context-aware reply.
 9. Click **How it works** to show the architecture modal, then toggle **dark mode** and scroll through the timeline and map.
+
+---
+
+## Project Limitations
+
+JourneyMind AI is a **hackathon prototype** focused on demonstrating AI orchestration and explainability. It is **not** a production system. Key limitations:
+
+- **In-memory state only.** All data is held in Python module-level variables. Restarting the backend resets the demo; there is no database.
+- **Mock travel data.** Flight, weather, alternatives, and airport services are hardcoded. There are no live airline, airport, or weather integrations.
+- **Deterministic AI reasoning.** The decision engine uses curated rules and pre-scored alternatives. LLM reasoning is only used for the copilot chat, and only when `OPENAI_API_KEY` is set; otherwise a context-aware mock reply is returned.
+- **Single traveler, single journey.** The prototype models one passenger and one disrupted flight.
+- **No authentication or persistence.** No login, no sessions, no booking history.
+- **No deployment artifacts.** No Docker, CI/CD, or cloud configuration is included.
+
+See `ARCHITECTURE.md` for the current implementation details and the **Future Evolution** section for the production path.
 
 ---
 
