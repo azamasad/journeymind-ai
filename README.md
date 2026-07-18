@@ -2,7 +2,7 @@
 
 > **Proactive AI Travel Disruption Assistant**
 
-JourneyMind AI is a hackathon-ready enterprise demo that acts as an AI copilot for the entire travel journey. It proactively detects flight disruptions, evaluates alternatives, updates itineraries, recommends airport services, predicts impact, and answers traveler questions — all in real time.
+JourneyMind AI is a hackathon-ready enterprise demo that demonstrates an **AI orchestration platform** for travel disruption management. It proactively detects flight disruptions, reasons over live (mock) travel data, evaluates alternatives, explains its decisions, predicts business impact, updates itineraries, and answers traveler questions — all in real time.
 
 ---
 
@@ -14,7 +14,9 @@ When a flight is delayed, cancelled, or a gate changes, JourneyMind AI does not 
 - Evaluates rebooking alternatives (flights, rail, upgrades)
 - Explains recommendations with confidence scores and reasoning
 - Suggests lounges, restaurants, charging stations, and workspaces
-- Displays an airport map, timeline, weather, and agentic workflow
+- Displays an airport map, timeline, weather, and AI decision timeline
+- Explains recommendations with a dedicated explainability modal
+- Surfaces business impact metrics from AI-estimated outcomes
 - Provides a conversational AI copilot with OpenAI fallback support
 
 ---
@@ -30,9 +32,12 @@ journeymind-ai/
 │   └── screenshots/         # Demo screenshots for README and LinkedIn
 ├── frontend/
 │   ├── src/
-│   │   ├── App.tsx          # Single-page dashboard
+│   │   ├── App.tsx          # Single-page enterprise dashboard
 │   │   ├── main.tsx         # React entrypoint
 │   │   └── index.css        # Tailwind base + custom styles
+│   ├── e2e/
+│   │   └── journeymind.spec.ts  # Playwright API + UI smoke tests
+│   ├── playwright.config.ts
 │   ├── index.html
 │   ├── package.json
 │   ├── vite.config.ts       # Vite with API proxy
@@ -63,7 +68,12 @@ journeymind-ai/
 - **Airport Services** — lounges, restaurants, coffee, charging, workspaces, family areas with ratings and distances
 - **Journey Timeline** — check-in, security, gate, boarding, departure, arrival, hotel
 - **Airport Map Placeholder** — SVG map with current position, gate, lounge, restaurant, and walking path
-- **AI Agent Workflow** — simulated autonomous actions: detect, evaluate, contact APIs, update itinerary, generate recommendations, notify
+- **AI Decision Timeline** — chronological, timestamped view of autonomous agent actions: disruption detection, alternative evaluation, risk comparison, recommendation generation, traveler notification
+- **Journey Summary** — proactive summary shown before user interaction: "We detected a disruption and have already evaluated your options"
+- **Business Impact Panel** — AI-estimated executive metrics: support calls avoided, delay reduction, customer satisfaction, passenger stress, operational confidence, carbon impact
+- **AI Explainability Modal** — "Why this recommendation?" with decision inputs, decision process, confidence score, and ranked factors
+- **Demo Mode Badge** — "Demo Mode · Mock Enterprise Data" avoids implying live airline integrations
+- **Architecture Modal** — "How JourneyMind Works" visual flow from travel event to AI orchestrator, reasoning engine, recommendation engine, and passenger experience
 - **Weather & Travel Alerts** — origin/destination weather and unread notifications
 - **Dark / Light Mode** — toggle with Tailwind `dark` class
 - **Voice Input Mock** — microphone button triggers mock capture and sends a query
@@ -99,6 +109,8 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 Backend will be available at `http://localhost:8000`.
 
+The state is held in memory; restart the server to reset to the initial disrupted scenario.
+
 ### 3. Frontend
 
 In a new terminal:
@@ -110,6 +122,16 @@ npm run dev
 ```
 
 Frontend will be available at `http://localhost:3000` and proxies `/api` calls to the backend.
+
+### 4. Build, lint, and test
+
+```bash
+cd frontend
+npm run lint
+npm run build
+npx playwright install chromium   # first time only
+npx playwright test
+```
 
 ### Optional: OpenAI Integration
 
@@ -139,13 +161,15 @@ If no key is provided, JourneyMind AI falls back to intelligent, context-aware m
 
 ## 5-Minute Demo Script
 
-1. Open `http://localhost:3000` and point out the **flight card** (LH762, 95-min delay, gate G25, countdown).
-2. Highlight the **Proactive AI Insights** panel — delay warning, better connection, lounge recommendation, security queue.
-3. Open the **Rebooking Engine** and explain the top option (LH762A via Frankfurt) with price, confidence, and CO₂.
-4. Click **Select Recommended** and show the toast + updated flight card / timeline.
-5. Open **Airport Services** and filter to lounges/coffee.
-6. Use the **AI Copilot** chat: ask "What are my options?" and show the typed reply.
-7. Toggle **dark mode** and scroll through the agent workflow and map.
+1. Open `http://localhost:3000` and point out the **Demo Mode** badge, then the **Journey Summary**: "We detected a disruption and have already evaluated your options."
+2. Show the **AI Decision Timeline** — timestamped autonomous agent actions (detect, evaluate, compare, notify).
+3. Point out the **Business Impact** panel and explain that these are AI-estimated enterprise outcomes.
+4. Open the **Rebooking Engine** and explain the top option (LH762A via Frankfurt) with price, confidence, decision factors, and CO₂.
+5. Click **Accept AI Recommendation** and show the toast + updated flight card, timeline, proactive insights, and journey summary.
+6. Click **Why this recommendation?** to open the **AI Explainability** modal and walk through Decision Inputs, Process, and Factors.
+7. Open **Airport Services** and filter to lounges/coffee.
+8. Use the **AI Copilot** chat: ask "What are my options?" and show the context-aware reply.
+9. Click **How it works** to show the architecture modal, then toggle **dark mode** and scroll through the timeline and map.
 
 ---
 
