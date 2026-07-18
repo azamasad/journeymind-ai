@@ -680,6 +680,8 @@ def rebook(req: RebookRequest):
         "business_impact": business_impact,
         "explainability": explainability,
         "recommendations": recommendations,
+        "journey_summary": journey_summary,
+        "decision_timeline": decision_timeline,
     }
 
 
