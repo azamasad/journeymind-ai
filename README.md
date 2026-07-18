@@ -23,28 +23,19 @@ When a flight is delayed, cancelled, or a gate changes, JourneyMind AI does not 
 
 ## Architecture
 
-```
-journeymind-ai/
-├── backend/
-│   ├── main.py              # FastAPI application & mock data
-│   └── requirements.txt     # Python dependencies
-├── docs/
-│   └── screenshots/         # Demo screenshots for README and LinkedIn
-├── frontend/
-│   ├── src/
-│   │   ├── App.tsx          # Single-page enterprise dashboard
-│   │   ├── main.tsx         # React entrypoint
-│   │   └── index.css        # Tailwind base + custom styles
-│   ├── e2e/
-│   │   └── journeymind.spec.ts  # Playwright API + UI smoke tests
-│   ├── playwright.config.ts
-│   ├── index.html
-│   ├── package.json
-│   ├── vite.config.ts       # Vite with API proxy
-│   ├── tailwind.config.js
-│   └── tsconfig.json
-└── README.md
-```
+### Repository Structure
+
+| Path                    | Contents                                                |
+|--------------------------|----------------------------------------------------------|
+| `backend/`               | FastAPI application (`main.py`) and mock data, plus `requirements.txt` |
+| `frontend/src/`          | React + TypeScript dashboard (`App.tsx`), entrypoint, and styles |
+| `frontend/e2e/`          | Playwright API + UI smoke tests                          |
+| `docs/screenshots/`      | Demo screenshots used in this README                     |
+| `run_demo.sh`            | One-command start/stop script for the backend and frontend |
+| `ARCHITECTURE.md`        | Detailed system architecture and request flow             |
+| `LICENSE`                | MIT license                                               |
+
+See `ARCHITECTURE.md` for a full breakdown of components and data flow.
 
 ### Tech Stack
 
@@ -120,7 +111,7 @@ flowchart TD
 - **Node.js** 18 or newer (`node`)
 - **npm** 9 or newer
 
-Verified on Python 3.10 and Node 20.x.
+Tested with Python 3.10+ and Node.js 18+, matching the minimum versions declared above and in `frontend/package.json` `engines`.
 
 ## Quick Start (one command)
 

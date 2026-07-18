@@ -8,6 +8,7 @@ backend/.Python
 backend/*.egg-info/
 backend/*.log
 *.log
+*.pid
 
 # Node / Vite
 frontend/node_modules/

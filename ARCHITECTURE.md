@@ -113,7 +113,7 @@ For the demo, reasoning is deterministic and based on curated mock data. The `/c
 
 ---
 
-## 8. Production Evolution (Future Architecture)
+## 8. Future Evolution
 
 This section describes a likely production path, **not** the current hackathon prototype.
 
