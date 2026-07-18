@@ -130,7 +130,7 @@ cd frontend
 npm run lint
 npm run build
 npx playwright install chromium   # first time only
-npx playwright test
+npm run test:e2e
 ```
 
 ### Optional: OpenAI Integration
