@@ -88,7 +88,33 @@ journeymind-ai/
 
 ---
 
-## Run Instructions
+## Prerequisites
+
+- **Python** 3.10 or newer (`python3` on macOS)
+- **Node.js** 18 or newer (`node`)
+- **npm** 9 or newer
+
+Verified on Python 3.10 and Node 20.x.
+
+## Quick Start (one command)
+
+From the project root:
+
+```bash
+git clone https://github.com/azamasad/journeymind-ai.git
+cd journeymind-ai
+./run_demo.sh
+```
+
+This creates the Python virtual environment, installs dependencies, starts the backend on `http://localhost:8000`, starts the Vite frontend on `http://localhost:3000`, and prints the URLs.
+
+To stop:
+
+```bash
+./run_demo.sh stop
+```
+
+## Manual Run Instructions
 
 ### 1. Clone the repository
 
@@ -103,7 +129,7 @@ cd journeymind-ai
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
@@ -122,6 +148,8 @@ npm run dev
 ```
 
 Frontend will be available at `http://localhost:3000` and proxies `/api` calls to the backend.
+
+If `npm install` warns about transitive legacy packages, those warnings do not affect the demo runtime.
 
 ### 4. Build, lint, and test
 
