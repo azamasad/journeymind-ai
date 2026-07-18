@@ -41,7 +41,7 @@ _now = datetime.now()
 base_departure = _now.replace(hour=14, minute=20, second=0, microsecond=0)
 if base_departure <= _now:
     base_departure += timedelta(days=1)
-delay_minutes = 600
+delay_minutes = 240
 new_departure = base_departure + timedelta(minutes=delay_minutes)
 base_arrival = base_departure + timedelta(hours=2, minutes=15)
 new_arrival = base_arrival + timedelta(minutes=delay_minutes)
@@ -82,7 +82,7 @@ timeline = [
 
 boarding_time = (new_departure - timedelta(minutes=40)).strftime("%H:%M")
 proactive_insights: List[dict] = [
-    {"type": "warning", "icon": "alert", "title": "Flight delayed by 10 hours", "detail": f"LH762 now departs {new_departure.strftime('%H:%M')} from gate G25."},
+    {"type": "warning", "icon": "alert", "title": "Flight delayed by 4 hours", "detail": f"LH762 now departs {new_departure.strftime('%H:%M')} from gate G25."},
     {"type": "success", "icon": "route", "title": "Better connection available", "detail": "LH762A departs earlier via FRA with a 45 min connection."},
     {"type": "success", "icon": "hotel", "title": "Hotel check-in updated", "detail": "The Hyatt has been notified of your late arrival."},
     {"type": "info", "icon": "lounge", "title": "Recommend Gate Lounge A", "detail": "Senator Lounge is 4 minutes from G25 and currently quiet."},
@@ -91,13 +91,16 @@ proactive_insights: List[dict] = [
     {"type": "info", "icon": "clock", "title": f"Boarding starts at {boarding_time}", "detail": "Priority boarding group 1 will be called first."},
 ]
 
+alt1_arrival = base_departure + timedelta(hours=2, minutes=45)
+alt1_saved_minutes = int((new_arrival - alt1_arrival).total_seconds() // 60)
+
 alternatives = [
     {
         "id": "alt-1",
         "type": "flight",
         "title": "LH762A via Frankfurt",
         "departure": (base_departure + timedelta(minutes=15)).isoformat(),
-        "arrival": (base_departure + timedelta(hours=2, minutes=45)).isoformat(),
+        "arrival": alt1_arrival.isoformat(),
         "origin": "MUC",
         "destination": "LHR",
         "stops": 1,
@@ -108,7 +111,7 @@ alternatives = [
         "recommendation": "Recommended",
         "reason": "Lowest arrival delay",
         "co2_g": 124,
-        "saves_minutes": 35,
+        "saves_minutes": alt1_saved_minutes,
         "decision_factors": [
             "Lowest arrival delay",
             "Lowest missed connection probability",
@@ -119,7 +122,7 @@ alternatives = [
         ],
         "business_impact": {
             "support_calls_avoided": 1,
-            "delay_reduction_min": 35,
+            "delay_reduction_min": alt1_saved_minutes,
             "customer_satisfaction_change": "+18%",
             "passenger_stress": "Reduced",
             "operational_confidence": "94%",
@@ -242,7 +245,7 @@ services = [
 ]
 
 alerts = [
-    {"id": "a1", "severity": "high", "title": "LH762 delayed 10 hours", "time": "13:10", "read": False},
+    {"id": "a1", "severity": "high", "title": "LH762 delayed 4 hours", "time": "13:10", "read": False},
     {"id": "a2", "severity": "medium", "title": "Gate G25 unchanged", "time": "13:12", "read": True},
     {"id": "a3", "severity": "low", "title": "Security queue low", "time": "13:15", "read": True},
     {"id": "a4", "severity": "medium", "title": "Hotel check-in updated", "time": "13:18", "read": False},
@@ -269,10 +272,10 @@ journey_summary = {
 }
 
 decision_timeline = [
-    {"time": "09:03", "title": "Flight disruption detected", "detail": f"LH762 delayed 10 hours due to ATC congestion", "icon": "alert"},
+    {"time": "09:03", "title": "Flight disruption detected", "detail": f"LH762 delayed 4 hours due to ATC congestion", "icon": "alert"},
     {"time": "09:03", "title": "Retrieved latest flight status", "detail": f"Estimated departure {new_departure.strftime('%H:%M')}, gate G25 unchanged", "icon": "refresh"},
     {"time": "09:03", "title": "Evaluated 12 alternative journeys", "detail": "Flights, rail, upgrades across alliances", "icon": "search"},
-    {"time": "09:04", "title": "Compared arrival delay", "detail": "LH762A via FRA reduces delay by 35 min", "icon": "clock"},
+    {"time": "09:04", "title": "Compared arrival delay", "detail": f"LH762A via FRA reduces delay by {alt1_saved_minutes} min", "icon": "clock"},
     {"time": "09:04", "title": "Compared transfer risk", "detail": "FRA connection protected, 45 min layover", "icon": "shield"},
     {"time": "09:04", "title": "Compared passenger preferences", "detail": "Business class, Star Gold, morning arrival", "icon": "user"},
     {"time": "09:05", "title": "Updated hotel ETA", "detail": f"Hyatt notified of {new_arrival.strftime('%H:%M')} arrival", "icon": "hotel"},
@@ -303,7 +306,7 @@ explainability = {
     "final_recommendation": "Switch to LH762A via Frankfurt",
     "confidence": 0.94,
     "factors": [
-        {"label": "Lowest arrival delay", "value": "35 min saved"},
+        {"label": "Lowest arrival delay", "value": f"{alt1_saved_minutes} min saved"},
         {"label": "Transfer risk", "value": "Low — 45 min connection"},
         {"label": "Passenger preference", "value": "Morning arrival"},
         {"label": "Seat availability", "value": "Confirmed"},
@@ -316,7 +319,7 @@ recommendations = [
         "title": "Switch to LH762A via Frankfurt",
         "reasons": alternatives[0]["decision_factors"][:3],
         "confidence": 0.94,
-        "saves_minutes": 35,
+        "saves_minutes": alt1_saved_minutes,
     },
     {
         "id": "rec-2",
