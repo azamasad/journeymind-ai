@@ -198,6 +198,7 @@ interface DashboardData {
   journey_summary: JourneySummary
   business_impact: BusinessImpact
   explainability: Explainability
+  last_updated?: string
 }
 
 interface Message {
@@ -305,7 +306,7 @@ function DemoBadge() {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
       <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-      Demo Mode · Mock Enterprise Data
+      Demo Mode · Simulated disruption
     </span>
   )
 }
@@ -410,7 +411,15 @@ function FlightCard({ flight }: { flight: Flight }) {
             <span className="text-sm text-slate-500 dark:text-slate-400">{flight.airline} · {flight.aircraft}</span>
           </div>
         </div>
-        <div className={cn('px-3 py-1 rounded-full text-sm font-semibold', statusColor)}>{flight.status}</div>
+        <div className="flex flex-col items-end gap-1.5">
+          <div className={cn('px-3 py-1 rounded-full text-sm font-semibold', statusColor)}>{flight.status}</div>
+          {hasDelay && (
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+              <AlertTriangle size={12} />
+              Critical Disruption
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mt-6 flex items-center justify-between gap-4">
@@ -461,14 +470,14 @@ function FlightCard({ flight }: { flight: Flight }) {
         </div>
         <div className="rounded-xl bg-slate-100 dark:bg-slate-700/50 p-3 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
           <p className="text-xs text-slate-500 dark:text-slate-400">Countdown</p>
-          <p className="text-lg font-bold text-slate-900 dark:text-white">{minutesToDep > 0 ? `${minutesToDep}m` : 'Due'}</p>
+          <p className="text-lg font-bold text-slate-900 dark:text-white">{minutesToDep > 0 ? formatDuration(minutesToDep) : 'Due'}</p>
         </div>
       </div>
 
       {hasDelay && (
         <div className="mt-4 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
           <AlertTriangle size={16} />
-          <span>{flight.delay_reason} — {flight.delay_minutes} min delay</span>
+          <span>{flight.delay_reason} — {formatDuration(flight.delay_minutes)} delay</span>
         </div>
       )}
     </div>
@@ -577,7 +586,14 @@ function AirportMap({ points }: { points: MapPoint[] }) {
   )
 }
 
-function BusinessImpactPanel({ impact }: { impact: BusinessImpact }) {
+function BusinessImpactPanel({ impact, alternatives, lastUpdated }: { impact: BusinessImpact; alternatives: Alternative[]; lastUpdated?: string }) {
+  const top = alternatives[0]
+  const kpi = [
+    { label: 'Delay reduction', value: `${impact.delay_reduction_min} min saved`, icon: <Clock size={14} /> },
+    { label: 'Confidence', value: impact.operational_confidence, icon: <Shield size={14} /> },
+    { label: 'Alternatives', value: `${alternatives.length} options compared`, icon: <Search size={14} /> },
+    { label: 'Rebooking cost', value: top && top.price === 0 ? 'No extra fee' : `€${top?.price || 0}`, icon: <Luggage size={14} /> },
+  ]
   const metrics = [
     { label: 'Support calls avoided', value: impact.support_calls_avoided.toString(), icon: <MessageSquare size={16} />, tone: 'text-brand-600 dark:text-brand-400' },
     { label: 'Delay reduction', value: `${impact.delay_reduction_min} min`, icon: <Clock size={16} />, tone: 'text-emerald-600 dark:text-emerald-400' },
@@ -589,8 +605,19 @@ function BusinessImpactPanel({ impact }: { impact: BusinessImpact }) {
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-4">
-        <p className="section-title mb-0">Business Impact</p>
+        <div>
+          <p className="section-title mb-0">Business Impact</p>
+          {lastUpdated && <p className="text-[10px] text-slate-400 mt-0.5">AI decision generated at {lastUpdated}</p>}
+        </div>
         <Badge tone="info">AI-estimated</Badge>
+      </div>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {kpi.map((item) => (
+          <div key={item.label} className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 dark:bg-brand-900/20 border border-brand-100 dark:border-brand-800 px-2.5 py-1 text-xs font-medium text-brand-700 dark:text-brand-300">
+            {item.icon}
+            <span>{item.value}</span>
+          </div>
+        ))}
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {metrics.map((m) => (
@@ -602,6 +629,29 @@ function BusinessImpactPanel({ impact }: { impact: BusinessImpact }) {
         ))}
       </div>
       <p className="mt-3 text-[10px] text-slate-500 dark:text-slate-400">{impact.explanation}</p>
+    </div>
+  )
+}
+
+function SourcesPanel() {
+  const sources = [
+    'Airline Operations',
+    'Airport Operations',
+    'Weather Intelligence',
+    'Passenger Preferences',
+    'Historical Performance',
+  ]
+  return (
+    <div className="card">
+      <p className="section-title">Sources Analyzed</p>
+      <div className="flex flex-wrap gap-2">
+        {sources.map((s) => (
+          <div key={s} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+            <Check size={12} />
+            {s}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -1177,7 +1227,9 @@ function App() {
             <div className="lg:col-span-8 space-y-6">
               <FlightCard flight={data.current_journey || data.flight} />
 
-              <BusinessImpactPanel impact={data.business_impact} />
+              <BusinessImpactPanel impact={data.business_impact} alternatives={data.alternatives} lastUpdated={data.last_updated} />
+
+              <SourcesPanel />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ProactivePanel insights={data.proactive_insights} />

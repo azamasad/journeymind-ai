@@ -37,10 +37,13 @@ traveler = {
 origin = {"iata": "MUC", "name": "Munich", "airport": "Munich Airport", "terminal": "2", "gate": "G25", "weather": {"temp_c": 14, "condition": "Partly cloudy", "icon": "cloud"}}
 destination = {"iata": "LHR", "name": "London", "airport": "London Heathrow", "terminal": "2", "gate": "A18", "weather": {"temp_c": 11, "condition": "Light rain", "icon": "rain"}}
 
-base_departure = datetime(2026, 7, 18, 14, 20)
-delay_minutes = 95
+_now = datetime.now()
+base_departure = _now.replace(hour=14, minute=20, second=0, microsecond=0)
+if base_departure <= _now:
+    base_departure += timedelta(days=1)
+delay_minutes = 600
 new_departure = base_departure + timedelta(minutes=delay_minutes)
-base_arrival = datetime(2026, 7, 18, 15, 35)
+base_arrival = base_departure + timedelta(hours=2, minutes=15)
 new_arrival = base_arrival + timedelta(minutes=delay_minutes)
 
 flight = {
@@ -71,20 +74,21 @@ timeline = [
     {"label": "Check-in", "time": "12:20", "status": "completed", "location": "Terminal 2"},
     {"label": "Security", "time": "12:45", "status": "completed", "location": "North Checkpoint"},
     {"label": "Gate", "time": "13:40", "status": "in_progress", "location": "G25"},
-    {"label": "Boarding", "time": "15:10", "status": "pending", "location": "G25"},
-    {"label": "Departure", "time": "15:55", "status": "pending", "location": "Runway 08R"},
-    {"label": "Arrival", "time": "17:10", "status": "pending", "location": "LHR T2"},
-    {"label": "Hotel", "time": "18:30", "status": "pending", "location": "The Hyatt, LHR"},
+    {"label": "Boarding", "time": (new_departure - timedelta(minutes=40)).strftime("%H:%M"), "status": "pending", "location": "G25"},
+    {"label": "Departure", "time": new_departure.strftime("%H:%M"), "status": "pending", "location": "Runway 08R"},
+    {"label": "Arrival", "time": new_arrival.strftime("%H:%M"), "status": "pending", "location": "LHR T2"},
+    {"label": "Hotel", "time": (new_arrival + timedelta(hours=1, minutes=15)).strftime("%H:%M"), "status": "pending", "location": "The Hyatt, LHR"},
 ]
 
+boarding_time = (new_departure - timedelta(minutes=40)).strftime("%H:%M")
 proactive_insights: List[dict] = [
-    {"type": "warning", "icon": "alert", "title": "Flight delayed by 95 minutes", "detail": "LH762 now departs 15:55 from gate G25."},
-    {"type": "success", "icon": "route", "title": "Better connection available", "detail": "LH762A departs 30 min earlier via FRA with a 45 min connection."},
+    {"type": "warning", "icon": "alert", "title": "Flight delayed by 10 hours", "detail": f"LH762 now departs {new_departure.strftime('%H:%M')} from gate G25."},
+    {"type": "success", "icon": "route", "title": "Better connection available", "detail": "LH762A departs earlier via FRA with a 45 min connection."},
     {"type": "success", "icon": "hotel", "title": "Hotel check-in updated", "detail": "The Hyatt has been notified of your late arrival."},
     {"type": "info", "icon": "lounge", "title": "Recommend Gate Lounge A", "detail": "Senator Lounge is 4 minutes from G25 and currently quiet."},
     {"type": "info", "icon": "walk", "title": "Walking time 8 minutes", "detail": "From current location to G25 via concourse B."},
     {"type": "success", "icon": "shield", "title": "Security queue currently low", "detail": "Approximate wait time 6 minutes at North Checkpoint."},
-    {"type": "info", "icon": "clock", "title": "Boarding starts in 35 minutes", "detail": "Priority boarding group 1 will be called first."},
+    {"type": "info", "icon": "clock", "title": f"Boarding starts at {boarding_time}", "detail": "Priority boarding group 1 will be called first."},
 ]
 
 alternatives = [
@@ -93,7 +97,7 @@ alternatives = [
         "type": "flight",
         "title": "LH762A via Frankfurt",
         "departure": (base_departure + timedelta(minutes=15)).isoformat(),
-        "arrival": "2026-07-18T17:05:00",
+        "arrival": (base_departure + timedelta(hours=2, minutes=45)).isoformat(),
         "origin": "MUC",
         "destination": "LHR",
         "stops": 1,
@@ -127,8 +131,8 @@ alternatives = [
         "id": "alt-2",
         "type": "rail",
         "title": "Lufthansa Express Rail to London",
-        "departure": "2026-07-18T15:35:00",
-        "arrival": "2026-07-18T20:15:00",
+        "departure": (base_departure + timedelta(hours=1, minutes=15)).isoformat(),
+        "arrival": (base_departure + timedelta(hours=5, minutes=55)).isoformat(),
         "origin": "Munich Hbf",
         "destination": "London St Pancras",
         "stops": 0,
@@ -161,8 +165,8 @@ alternatives = [
         "id": "alt-3",
         "type": "flight",
         "title": "LH762 Next Day",
-        "departure": "2026-07-19T08:15:00",
-        "arrival": "2026-07-19T09:30:00",
+        "departure": (base_departure + timedelta(hours=17, minutes=55)).isoformat(),
+        "arrival": (base_departure + timedelta(hours=20, minutes=10)).isoformat(),
         "origin": "MUC",
         "destination": "LHR",
         "stops": 0,
@@ -238,7 +242,7 @@ services = [
 ]
 
 alerts = [
-    {"id": "a1", "severity": "high", "title": "LH762 delayed 95 minutes", "time": "13:10", "read": False},
+    {"id": "a1", "severity": "high", "title": "LH762 delayed 10 hours", "time": "13:10", "read": False},
     {"id": "a2", "severity": "medium", "title": "Gate G25 unchanged", "time": "13:12", "read": True},
     {"id": "a3", "severity": "low", "title": "Security queue low", "time": "13:15", "read": True},
     {"id": "a4", "severity": "medium", "title": "Hotel check-in updated", "time": "13:18", "read": False},
@@ -253,7 +257,7 @@ map_points = [
 ]
 
 journey_summary = {
-    "headline": "We detected a disruption and have already evaluated your options.",
+    "headline": "A major disruption has occurred. JourneyMind AI has already analyzed the situation and prepared the best options.",
     "completed": [
         "Checked flight status",
         "Found alternatives",
@@ -265,13 +269,13 @@ journey_summary = {
 }
 
 decision_timeline = [
-    {"time": "09:03", "title": "Flight disruption detected", "detail": "LH762 delayed 95 minutes due to ATC congestion", "icon": "alert"},
-    {"time": "09:03", "title": "Retrieved latest flight status", "detail": "Estimated departure 15:55, gate G25 unchanged", "icon": "refresh"},
+    {"time": "09:03", "title": "Flight disruption detected", "detail": f"LH762 delayed 10 hours due to ATC congestion", "icon": "alert"},
+    {"time": "09:03", "title": "Retrieved latest flight status", "detail": f"Estimated departure {new_departure.strftime('%H:%M')}, gate G25 unchanged", "icon": "refresh"},
     {"time": "09:03", "title": "Evaluated 12 alternative journeys", "detail": "Flights, rail, upgrades across alliances", "icon": "search"},
     {"time": "09:04", "title": "Compared arrival delay", "detail": "LH762A via FRA reduces delay by 35 min", "icon": "clock"},
     {"time": "09:04", "title": "Compared transfer risk", "detail": "FRA connection protected, 45 min layover", "icon": "shield"},
     {"time": "09:04", "title": "Compared passenger preferences", "detail": "Business class, Star Gold, morning arrival", "icon": "user"},
-    {"time": "09:05", "title": "Updated hotel ETA", "detail": "Hyatt notified of 17:05 arrival", "icon": "hotel"},
+    {"time": "09:05", "title": "Updated hotel ETA", "detail": f"Hyatt notified of {new_arrival.strftime('%H:%M')} arrival", "icon": "hotel"},
     {"time": "09:05", "title": "Recommended Lounge A", "detail": "Senator Lounge 4 min from gate, low occupancy", "icon": "lounge"},
     {"time": "09:05", "title": "Generated personalized recommendation", "detail": "Top option: LH762A with 94% confidence", "icon": "sparkles"},
     {"time": "09:05", "title": "Notified traveler", "detail": "Push + email sent to Sarah", "icon": "bell"},
@@ -376,7 +380,8 @@ def generate_mock_reply(message: str, journey: dict) -> str:
 
     if re.search(r"\b(delay|delayed|late|status|when.*flight|what.*flight)\b", m):
         if status == "Delayed":
-            return f"I've already analyzed the disruption. {number} is delayed by {delay} minutes and now departs at {dep} from gate {gate}. I've prepared updated travel options if you want to switch."
+            delay_text = f"{delay} minutes" if delay < 60 else f"{delay // 60} hours"
+            return f"I've already analyzed the disruption. {number} is delayed by {delay_text} and now departs at {dep} from gate {gate}. I've prepared updated travel options if you want to switch."
         return f"Good news — {number} is confirmed and on time. Departure is {dep} from gate {gate} and arrival is {arr}."
 
     if re.search(r"\b(why.*recommend|recommend.*why|why this option|reason.*recommendation)\b", m):
@@ -562,6 +567,13 @@ def apply_rebooking(option: dict):
     orig_iata, orig_name, orig_airport = airport_for(option["origin"])
     dest_iata, dest_name, dest_airport = airport_for(option["destination"])
 
+    hotel_time = "18:30"
+    try:
+        arr_dt = datetime.fromisoformat(option["arrival"])
+        hotel_time = fmt_time(arr_dt + timedelta(hours=1, minutes=15))
+    except Exception:
+        pass
+
     current_itinerary = {
         "flight_number": option["title"],
         "airline": airline,
@@ -591,7 +603,7 @@ def apply_rebooking(option: dict):
         {"label": "Boarding", "time": fmt_time(boarding), "status": "pending", "location": orig_iata},
         {"label": "Departure", "time": fmt_time(dep), "status": "pending", "location": orig_iata},
         {"label": "Arrival", "time": fmt_time(option["arrival"]), "status": "pending", "location": dest_iata},
-        {"label": "Hotel", "time": "18:30", "status": "pending", "location": "The Hyatt, LHR"},
+        {"label": "Hotel", "time": hotel_time, "status": "pending", "location": "The Hyatt, LHR"},
     ]
 
     proactive_insights = _optimized_insights(option)
@@ -644,6 +656,7 @@ def _build_dashboard() -> dict:
         "journey_summary": journey_summary,
         "business_impact": business_impact,
         "explainability": explainability,
+        "last_updated": now_str(),
     }
 
 
