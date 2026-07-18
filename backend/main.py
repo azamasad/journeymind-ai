@@ -379,6 +379,10 @@ def generate_mock_reply(message: str, journey: dict) -> str:
             return f"I've already analyzed the disruption. {number} is delayed by {delay} minutes and now departs at {dep} from gate {gate}. I've prepared updated travel options if you want to switch."
         return f"Good news — {number} is confirmed and on time. Departure is {dep} from gate {gate} and arrival is {arr}."
 
+    if re.search(r"\b(why.*recommend|recommend.*why|why this option|reason.*recommendation)\b", m):
+        factors = ", ".join(top.get("decision_factors", [])[:3])
+        return f"I recommended {top['title']} with {(top['confidence']*100):.0f}% confidence because it has the {factors}. It saves {top_saved} minutes versus your current disrupted itinerary."
+
     if re.search(r"\b(options?|alternatives?|choices?|change|rebook|switch|other)\b", m):
         return f"I evaluated {len(alternatives)} alternatives. The top option is {top['title']}, departing {_fmt(top['departure'])} and arriving {_fmt(top['arrival'])} — it saves {top_saved} minutes and has a {(top['confidence']*100):.0f}% confidence score."
 
@@ -479,13 +483,20 @@ def _optimized_insights(option: dict) -> List[dict]:
             {"type": "info", "icon": "lounge", "title": "Lounge recommendation", "detail": "Senator Lounge remains available if you return to air travel later."},
             {"type": "info", "icon": "clock", "title": "Boarding updated", "detail": f"Coach {traveler['seat'][-1] if traveler['seat'] else '3'} — be at the platform 15 minutes before departure."},
         ]
+    dep = option['departure']
+    boarding = dep
+    if isinstance(dep, str) and "T" in dep:
+        try:
+            boarding = fmt_time(datetime.fromisoformat(dep) - timedelta(minutes=40))
+        except Exception:
+            boarding = fmt_time(dep)
     return [
         {"type": "success", "icon": "route", "title": "Journey optimized", "detail": f"Switched to {option['title']}, arriving at {fmt_time(option['arrival'])}."},
         {"type": "success", "icon": "clock", "title": "Arrival delay reduced", "detail": f"{option.get('saves_minutes', 0)} minutes saved versus the disrupted itinerary."},
         {"type": "success", "icon": "shield", "title": "Connection secured" if option.get("stops", 0) > 0 else "Direct connection confirmed", "detail": "45-minute protected connection in Frankfurt" if option.get("stops", 0) > 0 else "No connection risk on this routing."},
         {"type": "info", "icon": "hotel", "title": "Hotel ETA updated", "detail": "The Hyatt has been notified of your new arrival time."},
         {"type": "info", "icon": "lounge", "title": "Lounge recommendation unchanged", "detail": "Senator Lounge remains the closest quiet option."},
-        {"type": "info", "icon": "clock", "title": "Boarding updated", "detail": f"Priority boarding group 1 starts at {fmt_time(option['departure']) if 'T' in str(option['departure']) else option['departure']}."},
+        {"type": "info", "icon": "clock", "title": "Boarding updated", "detail": f"Priority boarding group 1 starts at {boarding}."},
     ]
 
 
@@ -609,9 +620,11 @@ def apply_rebooking(option: dict):
         ],
     }
 
-    decision_timeline = decision_timeline + [
-        {"time": now_str(), "title": "Rebooking confirmed", "detail": f"Passenger accepted {option['title']}", "icon": "check"}
-    ]
+    final_step = {"time": now_str(), "title": "Rebooking confirmed", "detail": f"Passenger accepted {option['title']}", "icon": "check"}
+    if not decision_timeline or decision_timeline[-1].get("title") != final_step["title"]:
+        decision_timeline = decision_timeline + [final_step]
+    elif decision_timeline[-1].get("detail") != final_step["detail"]:
+        decision_timeline = decision_timeline + [final_step]
 
 
 def _build_dashboard() -> dict:

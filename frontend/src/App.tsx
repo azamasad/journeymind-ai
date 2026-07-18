@@ -693,9 +693,9 @@ function WhyRecommendationModal({ open, onClose, data }: { open: boolean; onClos
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Decision Factors</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {data.factors.map((f) => (
-              <div key={f.label} className="flex items-center justify-between rounded-lg bg-slate-50 dark:bg-slate-800 p-2">
-                <span className="text-xs text-slate-700 dark:text-slate-300">{f.label}</span>
-                <span className="text-xs font-semibold text-brand-700 dark:text-brand-300">{f.value}</span>
+              <div key={f.label} className="grid grid-cols-[1fr,auto] gap-3 rounded-lg bg-slate-50 dark:bg-slate-800 p-2">
+                <span className="text-xs text-slate-700 dark:text-slate-300 truncate">{f.label}</span>
+                <span className="text-[10px] font-semibold text-brand-700 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/30 px-1.5 py-0.5 rounded text-right shrink-0">{f.value}</span>
               </div>
             ))}
           </div>
