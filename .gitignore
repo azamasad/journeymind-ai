@@ -6,6 +6,8 @@ backend/*.pyo
 backend/*.pyd
 backend/.Python
 backend/*.egg-info/
+backend/*.log
+*.log
 
 # Node / Vite
 frontend/node_modules/

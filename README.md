@@ -26,6 +26,8 @@ journeymind-ai/
 ├── backend/
 │   ├── main.py              # FastAPI application & mock data
 │   └── requirements.txt     # Python dependencies
+├── docs/
+│   └── screenshots/         # Demo screenshots for README and LinkedIn
 ├── frontend/
 │   ├── src/
 │   │   ├── App.tsx          # Single-page dashboard
@@ -70,11 +72,9 @@ journeymind-ai/
 
 ## Screenshots
 
-_Screenshots go here in a `screenshots/` folder. Example placeholders:_
-
-![Dashboard Light](screenshots/dashboard-light.png)
-![Dashboard Dark](screenshots/dashboard-dark.png)
-![Copilot Chat](screenshots/copilot-chat.png)
+| Dashboard (Light) | AI Copilot | Rebooking Engine | Mobile | Dark Mode |
+|---|---|---|---|---|
+| ![Dashboard Light](docs/screenshots/dashboard-light.png) | ![AI Copilot](docs/screenshots/ai-copilot.png) | ![Rebooking Engine](docs/screenshots/rebooking-engine.png) | ![Mobile](docs/screenshots/mobile-responsive.png) | ![Dark Mode](docs/screenshots/dashboard-dark.png) |
 
 ---
 
@@ -128,12 +128,24 @@ If no key is provided, JourneyMind AI falls back to intelligent, context-aware m
 | Endpoint              | Method | Description                                |
 |-----------------------|--------|--------------------------------------------|
 | `/`                   | GET    | Health check                               |
-| `/dashboard`           | GET    | Full dashboard payload                     |
+| `/dashboard`          | GET    | Full dashboard payload                     |
 | `/chat`               | POST   | `{ "message": "..." }` → AI reply         |
 | `/recommendations`    | GET    | Ranked recommendations + alternatives      |
 | `/rebook`             | POST   | `{ "option_id": "alt-1" }` → new itinerary |
 | `/alerts`             | GET    | Travel alerts                              |
 | `/mockdata`           | GET    | Raw mock dataset                           |
+
+---
+
+## 5-Minute Demo Script
+
+1. Open `http://localhost:3000` and point out the **flight card** (LH762, 95-min delay, gate G25, countdown).
+2. Highlight the **Proactive AI Insights** panel — delay warning, better connection, lounge recommendation, security queue.
+3. Open the **Rebooking Engine** and explain the top option (LH762A via Frankfurt) with price, confidence, and CO₂.
+4. Click **Select Recommended** and show the toast + updated flight card / timeline.
+5. Open **Airport Services** and filter to lounges/coffee.
+6. Use the **AI Copilot** chat: ask "What are my options?" and show the typed reply.
+7. Toggle **dark mode** and scroll through the agent workflow and map.
 
 ---
 

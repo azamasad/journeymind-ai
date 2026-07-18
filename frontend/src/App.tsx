@@ -149,16 +149,7 @@ interface DashboardData {
     frequent_flyer: string
   }
   flight: Flight
-  itinerary: {
-    flight_number: string
-    origin: Airport
-    destination: Airport
-    departure: string
-    arrival: string
-    seat: string
-    class: string
-    status: string
-  }
+  current_journey: Flight
   weather: { origin: Weather; destination: Weather }
   timeline: TimelineItem[]
   proactive_insights: Insight[]
@@ -288,6 +279,7 @@ function FlightCard({ flight }: { flight: Flight }) {
   const dep = new Date(flight.departure_estimated)
   const now = new Date()
   const minutesToDep = Math.max(0, Math.floor((dep.getTime() - now.getTime()) / 60000))
+  const hasDelay = flight.delay_minutes > 0
 
   const statusTone = flight.status === 'Delayed' ? 'warning' : flight.status === 'Cancelled' ? 'error' : 'success'
   const statusColor = statusTone === 'warning' ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400' : 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-400'
@@ -310,14 +302,20 @@ function FlightCard({ flight }: { flight: Flight }) {
           <p className="text-3xl font-bold text-slate-900 dark:text-white">{flight.origin.iata}</p>
           <p className="text-sm text-slate-500 dark:text-slate-400">{flight.origin.airport}</p>
           <p className="text-lg font-semibold text-slate-800 dark:text-slate-200 mt-1">{formatTime(flight.departure_estimated)}</p>
-          <p className="text-xs text-slate-400 line-through">{formatTime(flight.departure_scheduled)}</p>
+          {flight.departure_scheduled !== flight.departure_estimated && (
+            <p className="text-xs text-slate-400 line-through">{formatTime(flight.departure_scheduled)}</p>
+          )}
         </div>
 
         <div className="flex-1 flex flex-col items-center px-4">
-          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{formatDuration(flight.delay_minutes)} delay</div>
+          {hasDelay ? (
+            <div className="text-xs text-amber-600 dark:text-amber-400 mb-1">{formatDuration(flight.delay_minutes)} delay</div>
+          ) : (
+            <div className="text-xs text-emerald-600 dark:text-emerald-400 mb-1">On time</div>
+          )}
           <div className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded relative overflow-hidden">
-            <div className="absolute top-0 left-0 h-full w-3/4 bg-brand-500 rounded" />
-            <Plane className="absolute top-1/2 -translate-y-1/2 left-3/4 text-brand-600" size={18} />
+            <div className={cn('absolute top-0 left-0 h-full bg-brand-500 rounded', hasDelay ? 'w-3/4' : 'w-full')} />
+            <Plane className={cn('absolute top-1/2 -translate-y-1/2 text-brand-600', hasDelay ? 'left-3/4' : 'left-full -translate-x-full')} size={18} />
           </div>
           <p className="text-xs text-slate-500 mt-2">{flight.duration || '2h 15m'}</p>
         </div>
@@ -326,7 +324,9 @@ function FlightCard({ flight }: { flight: Flight }) {
           <p className="text-3xl font-bold text-slate-900 dark:text-white">{flight.destination.iata}</p>
           <p className="text-sm text-slate-500 dark:text-slate-400">{flight.destination.airport}</p>
           <p className="text-lg font-semibold text-slate-800 dark:text-slate-200 mt-1">{formatTime(flight.arrival_estimated)}</p>
-          <p className="text-xs text-slate-400 line-through">{formatTime(flight.arrival_scheduled)}</p>
+          {flight.arrival_scheduled !== flight.arrival_estimated && (
+            <p className="text-xs text-slate-400 line-through">{formatTime(flight.arrival_scheduled)}</p>
+          )}
         </div>
       </div>
 
@@ -349,10 +349,12 @@ function FlightCard({ flight }: { flight: Flight }) {
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
-        <AlertTriangle size={16} />
-        <span>{flight.delay_reason} — {flight.delay_minutes} min delay</span>
-      </div>
+      {hasDelay && (
+        <div className="mt-4 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+          <AlertTriangle size={16} />
+          <span>{flight.delay_reason} — {flight.delay_minutes} min delay</span>
+        </div>
+      )}
     </div>
   )
 }
@@ -905,7 +907,7 @@ function App() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left column */}
             <div className="lg:col-span-8 space-y-6">
-              <FlightCard flight={data.flight} />
+              <FlightCard flight={data.current_journey || data.flight} />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ProactivePanel insights={data.proactive_insights} />
@@ -925,8 +927,8 @@ function App() {
 
             {/* Right column */}
             <div className="lg:col-span-4 space-y-6 order-first lg:order-last">
-              <CopilotChat flight={data.flight} onShowToast={showToast} />
-              <PassengerCard traveler={data.traveler} flight={data.flight} />
+              <CopilotChat flight={data.current_journey || data.flight} onShowToast={showToast} />
+              <PassengerCard traveler={data.traveler} flight={data.current_journey || data.flight} />
               <WeatherCard origin={data.weather.origin} destination={data.weather.destination} />
               <AlertsPanel alerts={data.alerts} />
             </div>

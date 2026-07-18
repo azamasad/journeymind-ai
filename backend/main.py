@@ -1,6 +1,5 @@
 import os
 import re
-import random
 from datetime import datetime, timedelta
 from typing import List, Optional
 
@@ -62,19 +61,11 @@ flight = {
     "seat": traveler["seat"],
     "class": "Business",
     "booking_ref": "R7N4KP",
+    "duration": "2h 15m",
 }
 
-# Initial itinerary; will mutate on rebooking
-current_itinerary = {
-    "flight_number": flight["flight_number"],
-    "origin": flight["origin"],
-    "destination": flight["destination"],
-    "departure": flight["departure_estimated"],
-    "arrival": flight["arrival_estimated"],
-    "seat": traveler["seat"],
-    "class": flight["class"],
-    "status": flight["status"],
-}
+# Initial itinerary; will mutate on rebooking (kept in sync with the flight card schema)
+current_itinerary = flight.copy()
 
 timeline = [
     {"label": "Check-in", "time": "12:20", "status": "completed", "location": "Terminal 2"},
@@ -316,11 +307,34 @@ def now_str() -> str:
     return datetime.now().strftime("%H:%M")
 
 
+AIRPORT_NAMES = {
+    "MUC": ("MUC", "Munich", "Munich Airport"),
+    "LHR": ("LHR", "London", "London Heathrow"),
+    "Munich Hbf": ("Munich Hbf", "Munich", "Munich Hauptbahnhof"),
+    "London St Pancras": ("London St Pancras", "London", "London St Pancras"),
+}
+
+
+def airport_for(code: str):
+    return AIRPORT_NAMES.get(code, (code, code, code))
+
+
+def fmt_time(value) -> str:
+    if isinstance(value, datetime):
+        return value.strftime("%H:%M")
+    if isinstance(value, str) and "T" in value:
+        try:
+            return datetime.fromisoformat(value).strftime("%H:%M")
+        except Exception:
+            return value
+    return value
+
+
 def _build_dashboard() -> dict:
     return {
         "traveler": traveler,
         "flight": flight,
-        "itinerary": current_itinerary,
+        "current_journey": current_itinerary,
         "weather": {"origin": origin["weather"], "destination": destination["weather"]},
         "timeline": timeline,
         "proactive_insights": proactive_insights,
@@ -363,32 +377,62 @@ def chat(req: ChatRequest):
 
 @app.post("/rebook")
 def rebook(req: RebookRequest):
-    global current_itinerary
+    global current_itinerary, timeline
     option = next((a for a in alternatives if a["id"] == req.option_id), None)
     if not option:
         raise HTTPException(status_code=404, detail="Alternative not found")
 
+    dep = option["departure"]
+    dep_dt = None
+    try:
+        dep_dt = datetime.fromisoformat(dep)
+    except Exception:
+        pass
+    boarding = option.get("boarding")
+    if not boarding and dep_dt:
+        boarding = (dep_dt - timedelta(minutes=40)).isoformat()
+    elif not boarding:
+        boarding = dep
+
+    vehicle = "Train" if option["type"] == "rail" else flight["aircraft"]
+    airline = "Lufthansa Express Rail" if option["type"] == "rail" else flight["airline"]
+    airline_code = "Rail" if option["type"] == "rail" else flight["airline_code"]
+    seat = traveler["seat"] if option["type"] != "rail" else "Coach 3"
+    travel_class = flight["class"] if option["type"] != "rail" else "First Class"
+
+    orig_iata, orig_name, orig_airport = airport_for(option["origin"])
+    dest_iata, dest_name, dest_airport = airport_for(option["destination"])
+
     current_itinerary = {
         "flight_number": option["title"],
-        "origin": {"iata": option["origin"], "name": option["origin"], "airport": option["origin"], "terminal": "2", "gate": option.get("gate", "G25")},
-        "destination": {"iata": option["destination"], "name": option["destination"], "airport": option["destination"], "terminal": "2", "gate": "A18"},
-        "departure": option["departure"],
-        "arrival": option["arrival"],
-        "seat": traveler["seat"] if option["type"] != "rail" else "Coach 3",
-        "class": flight["class"] if option["type"] != "rail" else "First Class",
+        "airline": airline,
+        "airline_code": airline_code,
+        "origin": {"iata": orig_iata, "name": orig_name, "airport": orig_airport, "terminal": "2", "gate": option.get("gate", "G25")},
+        "destination": {"iata": dest_iata, "name": dest_name, "airport": dest_airport, "terminal": "2", "gate": "A18"},
+        "aircraft": vehicle,
+        "departure_scheduled": dep,
+        "departure_estimated": dep,
+        "arrival_scheduled": option["arrival"],
+        "arrival_estimated": option["arrival"],
+        "boarding_starts": boarding,
+        "gate": option.get("gate", "G25"),
         "status": "Confirmed",
-        "price": option["price"],
-        "currency": option["currency"],
+        "delay_minutes": 0,
+        "delay_reason": "",
+        "seat": seat,
+        "class": travel_class,
+        "booking_ref": flight["booking_ref"],
+        "duration": option["duration"],
     }
 
-    # Update timeline to reflect disruption / rebooking
-    new_tl = [
+    # Update timeline to reflect disruption / reboarding
+    timeline = [
         {"label": "Check-in", "time": "12:20", "status": "completed", "location": "Terminal 2"},
         {"label": "Security", "time": "12:45", "status": "completed", "location": "North Checkpoint"},
         {"label": "Gate", "time": "13:40", "status": "completed", "location": "G25"},
-        {"label": "Boarding", "time": option.get("boarding", option["departure"]), "status": "pending", "location": option["origin"]},
-        {"label": "Departure", "time": option["departure"], "status": "pending", "location": option["origin"]},
-        {"label": "Arrival", "time": option["arrival"], "status": "pending", "location": option["destination"]},
+        {"label": "Boarding", "time": fmt_time(boarding), "status": "pending", "location": orig_iata},
+        {"label": "Departure", "time": fmt_time(dep), "status": "pending", "location": orig_iata},
+        {"label": "Arrival", "time": fmt_time(option["arrival"]), "status": "pending", "location": dest_iata},
         {"label": "Hotel", "time": "18:30", "status": "pending", "location": "The Hyatt, LHR"},
     ]
 
@@ -396,7 +440,8 @@ def rebook(req: RebookRequest):
         "success": True,
         "message": f"Itinerary updated to {option['title']}",
         "itinerary": current_itinerary,
-        "timeline": new_tl,
+        "current_journey": current_itinerary,
+        "timeline": timeline,
     }
 
 
@@ -411,6 +456,7 @@ def mockdata():
         "traveler": traveler,
         "flight": flight,
         "itinerary": current_itinerary,
+        "current_journey": current_itinerary,
         "timeline": timeline,
         "proactive_insights": proactive_insights,
         "alternatives": alternatives,
